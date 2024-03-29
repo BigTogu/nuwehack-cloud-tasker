@@ -1,12 +1,11 @@
 import json
 import boto3
-
-TABLE_NAME = "TaskTable"
+import os
 
 dynamodb = boto3.resource('dynamodb')
 
 def lambda_handler(event, context):
-    table = dynamodb.Table(TABLE_NAME)
+    table = dynamodb.Table(os.environ.get("TABLE_NAME"))
 
     response = table.scan()
 

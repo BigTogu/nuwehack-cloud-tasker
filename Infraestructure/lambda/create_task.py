@@ -1,8 +1,7 @@
 import json
 import boto3
 import uuid
-
-TABLE_NAME = "TaskTable"
+import os
 
 dynamodb = boto3.resource('dynamodb')
 
@@ -14,7 +13,7 @@ def lambda_handler(event, context):
 
     task_id = str(uuid.uuid4())
 
-    table = dynamodb.Table(TABLE_NAME)
+    table = dynamodb.Table(os.environ.get("TABLE_NAME"))
 
     table.put_item(
         Item={
