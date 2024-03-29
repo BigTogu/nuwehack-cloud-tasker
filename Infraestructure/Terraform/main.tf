@@ -18,7 +18,21 @@ provider "aws" {
   }
 }
 
-# Add here all the infraestructure logic
+# Variables
+variable "TABLE_NAME" {
+  type    = string
+  default = "TaskTable"
+}
+
+variable "BUCKET_NAME" {
+  type    = string
+  default = "taskstorage"
+}
+
+variable "runtime" {
+  type    = string
+  default = "python3.8"
+}
 
 
 
@@ -63,7 +77,7 @@ resource "aws_iam_role_policy_attachment" "attach_iam_policy_to_lambda_role" {
 
 # Define resources
 resource "aws_dynamodb_table" "TaskTable" {
-  name           = "TaskTable"
+  name           = var.TABLE_NAME
   billing_mode   = "PAY_PER_REQUEST"
   hash_key       = "task_id"
   attribute {
@@ -82,17 +96,17 @@ resource "aws_dynamodb_table" "TaskTable" {
   }
 
   tags = {
-    Name        = "TaskTable"
+    Name        = var.TABLE_NAME
     Environment = "Development"
   }
 
 }
 
 resource "aws_s3_bucket" "TaskStorage" {
-  bucket = "taskstorage"
+  bucket = var.BUCKET_NAME
 
   tags = {
-    Name        = "TaskStorage"
+    Name        = var.BUCKET_NAME
     Environment = "Development"
   }
 
@@ -113,7 +127,12 @@ resource "aws_lambda_function" "createScheduledTask" {
   function_name    = "createScheduledTask"
   role             = aws_iam_role.lambda_role.arn
   handler          = "create_task.lambda_handler"
-  runtime          = "python3.8"
+  runtime          = "${var.runtime}"
+  environment {
+    variables = {
+      TABLE_NAME  = var.TABLE_NAME
+    }
+  }
   depends_on       = [aws_iam_role_policy_attachment.attach_iam_policy_to_lambda_role]
 }
 
@@ -122,7 +141,12 @@ resource "aws_lambda_function" "listScheduledTask" {
   function_name    = "listScheduledTask"
   role             = aws_iam_role.lambda_role.arn
   handler          = "list_task.lambda_handler"
-  runtime          = "python3.8"
+  runtime          = "${var.runtime}"
+  environment {
+    variables = {
+      TABLE_NAME  = var.TABLE_NAME
+    }
+  }
   depends_on       = [aws_iam_role_policy_attachment.attach_iam_policy_to_lambda_role]
 }
 
@@ -131,7 +155,13 @@ resource "aws_lambda_function" "executeScheduledTask" {
   function_name    = "executeScheduledTask"
   role             = aws_iam_role.lambda_role.arn
   handler          = "task_storage.lambda_handler"
-  runtime          = "python3.8"
+  runtime          = "${var.runtime}"
+  environment {
+    variables = {
+      TABLE_NAME  = var.TABLE_NAME
+      BUCKET_NAME = var.BUCKET_NAME
+    }
+  }
   depends_on       = [aws_iam_role_policy_attachment.attach_iam_policy_to_lambda_role]
 }
 
