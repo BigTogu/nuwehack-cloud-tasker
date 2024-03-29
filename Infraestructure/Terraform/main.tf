@@ -34,39 +34,22 @@ variable "runtime" {
   default = "python3.8"
 }
 
-
+# Carga el contenido de policy.json
+locals {
+  policies = jsondecode(file("${path.module}/policy.json"))
+}
 
 # Define IAM roles and policies
 resource "aws_iam_role" "lambda_role" {
-  name = "lambda_role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { Service = "lambda.amazonaws.com" }
-      Action    = "sts:AssumeRole"
-    }]
-  })
+  name             = "lambda_role"
+  assume_role_policy = jsonencode(local.policies.lambda_role_policy)
 }
 
 resource "aws_iam_policy" "iam_policy_for_lambda" {
   name        = "aws_iam_policy_for_terraform_aws_lambda_role"
   description = "AWS IAM Policy for managing AWS Lambda role"
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action   = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ],
-        Resource = "arn:aws:logs:*:*:*",
-        Effect   = "Allow"
-      }
-    ]
-  })
+  policy = jsonencode(local.policies.lambda_logs_policy)
 }
 
 resource "aws_iam_role_policy_attachment" "attach_iam_policy_to_lambda_role" {
